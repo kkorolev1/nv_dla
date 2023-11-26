@@ -79,7 +79,7 @@ class Trainer(BaseTrainer):
         )
 
         mel_spec_config = MelSpectrogramConfig()
-        self.mel_spec_transform = MelSpectrogram(mel_spec_config)
+        self.mel_spec_transform = MelSpectrogram(mel_spec_config).to(self.device)
 
         if config.resume is not None:
             self._resume_checkpoint(config.resume)
