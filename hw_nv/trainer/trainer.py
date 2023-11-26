@@ -168,8 +168,7 @@ class Trainer(BaseTrainer):
             mel_spec_gt = self.mel_spec_transform(wav_gt).squeeze(1)
 
         wav_pred = self.model.generator(mel_spec_gt)
-        with torch.no_grad():
-            mel_spec_pred = self.mel_spec_transform(wav_pred).squeeze(1)
+        mel_spec_pred = self.mel_spec_transform(wav_pred).squeeze(1)
 
         # ---- Discriminator loss
         self.optimizer_d.zero_grad()
