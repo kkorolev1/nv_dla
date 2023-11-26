@@ -143,7 +143,7 @@ class Trainer(BaseTrainer):
                 self.writer.add_scalar(
                     "generator learning rate", self.lr_scheduler_g.get_last_lr()[0]
                 )
-                #self._log_predictions(**batch, is_train=True)
+                self._log_predictions(**batch, is_train=True)
                 self._log_scalars(self.train_metrics)
                 # we don't want to reset train metrics at the start of every epoch
                 # because we are interested in recent train metrics
@@ -168,6 +168,7 @@ class Trainer(BaseTrainer):
             mel_spec_gt = self.mel_spec_transform(wav_gt).squeeze(1)
 
         wav_pred = self.model.generator(mel_spec_gt)
+        batch["wav_pred"] = wav_pred
         mel_spec_pred = self.mel_spec_transform(wav_pred).squeeze(1)
 
         # ---- Discriminator loss
@@ -263,6 +264,11 @@ class Trainer(BaseTrainer):
             norm_type,
         )
         return total_norm.item()
+
+    def _log_predictions(self, wav_pred, is_train=True, examples_to_log=5, **kwargs):
+        wav_pred = wav_pred[:examples_to_log]
+        for i, wav in enumerate(wav_pred):
+            self._log_audio(wav.squeeze(0), sr=22050, name=str(i + 1))
 
     def _log_scalars(self, metric_tracker: MetricTracker):
         if self.writer is None:
