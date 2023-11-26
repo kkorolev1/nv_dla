@@ -1,6 +1,7 @@
 import random
 from pathlib import Path
 from random import shuffle
+import itertools
 
 import pandas as pd
 import torch
@@ -12,6 +13,8 @@ import os
 
 from hw_nv.base import BaseTrainer
 from hw_nv.utils import inf_loop, MetricTracker
+from hw_nv.model.mel_spectrogram import MelSpectrogramConfig, MelSpectrogram
+
 
 class Trainer(BaseTrainer):
     """
@@ -67,12 +70,16 @@ class Trainer(BaseTrainer):
             "mpd_features_g_loss",
             "msd_features_g_loss",
             "g_loss",
-            "grad norm",
+            "d_grad_norm",
+            "g_grad_norm",
             *[m.name for m in self.metrics], writer=self.writer
         )
         self.evaluation_metrics = MetricTracker(
             "loss", *[m.name for m in self.metrics], writer=self.writer
         )
+
+        mel_spec_config = MelSpectrogramConfig()
+        self.mel_spec_transform = MelSpectrogram(mel_spec_config)
 
         if config.resume is not None:
             self._resume_checkpoint(config.resume)
@@ -157,10 +164,12 @@ class Trainer(BaseTrainer):
 
         # wav_gt: Bx1xL
         wav_gt = batch["wav"]
-        mel_spec_gt = self.model.mel_spec_transform(wav_gt).squeeze(1)
+        with torch.no_grad():
+            mel_spec_gt = self.mel_spec_transform(wav_gt).squeeze(1)
 
         wav_pred = self.model.generator(mel_spec_gt)
-        mel_spec_pred = self.model.mel_spec_transform(wav_pred).squeeze(1)
+        with torch.no_grad():
+            mel_spec_pred = self.mel_spec_transform(wav_pred).squeeze(1)
 
         # ---- Discriminator loss
         self.optimizer_d.zero_grad()
@@ -182,6 +191,13 @@ class Trainer(BaseTrainer):
         self._clip_grad_norm(self.model.mpd)
         self._clip_grad_norm(self.model.msd)
         self.optimizer_d.step()
+
+        batch["mpd_d_loss"] = mpd_d_loss
+        batch["msd_d_loss"] = msd_d_loss
+        batch["d_loss"] = d_loss
+        
+        d_params = itertools.chain(self.model.mpd.parameters(), self.model.msd.parameters())
+        batch["d_grad_norm"] = torch.tensor([self.get_grad_norm(d_params)])
 
         # ---- Generator loss
         self.optimizer_g.zero_grad()
@@ -207,10 +223,6 @@ class Trainer(BaseTrainer):
         # TODO: clip_grad_norm
         self._clip_grad_norm(self.model.generator)
         self.optimizer_g.step()
-        
-        batch["mpd_d_loss"] = mpd_d_loss
-        batch["msd_d_loss"] = msd_d_loss
-        batch["d_loss"] = d_loss
 
         batch["mpd_g_loss"] = mpd_g_loss
         batch["msd_g_loss"] = msd_g_loss
@@ -218,7 +230,8 @@ class Trainer(BaseTrainer):
         batch["mpd_features_g_loss"] = mpd_features_g_loss
         batch["msd_features_g_loss"] = msd_features_g_loss
         batch["g_loss"] = g_loss
-        batch["grad norm"] = torch.tensor([self.get_grad_norm()])
+        g_params = self.model.generator.parameters()
+        batch["g_grad_norm"] = torch.tensor([self.get_grad_norm(g_params)])
     
         for metric_key in metrics.keys():
             metrics.update(metric_key, batch[metric_key].item())
@@ -239,8 +252,7 @@ class Trainer(BaseTrainer):
         self.writer.add_audio(f"Audio_{name}", audio, sample_rate=sr)
 
     @torch.no_grad()
-    def get_grad_norm(self, norm_type=2):
-        parameters = self.model.parameters()
+    def get_grad_norm(self, parameters, norm_type=2):
         if isinstance(parameters, torch.Tensor):
             parameters = [parameters]
         parameters = [p for p in parameters if p.grad is not None]
