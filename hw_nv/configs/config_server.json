@@ -91,6 +91,6 @@
     "wandb_project": "nv_project",
     "wandb_run_name": "one_batch_test",
     "len_epoch": 3,
-    "grad_norm_clip": 2
+    "grad_norm_clip": 10
   }
 }

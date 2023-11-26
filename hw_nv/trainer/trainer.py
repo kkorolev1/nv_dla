@@ -86,10 +86,10 @@ class Trainer(BaseTrainer):
             batch[tensor_for_gpu] = batch[tensor_for_gpu].to(device)
         return batch
 
-    def _clip_grad_norm(self):
+    def _clip_grad_norm(self, module):
         if self.config["trainer"].get("grad_norm_clip", None) is not None:
             clip_grad_norm_(
-                self.model.parameters(), self.config["trainer"]["grad_norm_clip"]
+                module.parameters(), self.config["trainer"]["grad_norm_clip"]
             )
     
     def _train_epoch(self, epoch):
@@ -158,7 +158,9 @@ class Trainer(BaseTrainer):
         # wav_gt: Bx1xL
         wav_gt = batch["wav"]
         mel_spec_gt = self.model.mel_spec_transform(wav_gt).squeeze(1)
+
         wav_pred = self.model.generator(mel_spec_gt)
+        mel_spec_pred = self.model.mel_spec_transform(wav_pred).squeeze(1)
 
         # ---- Discriminator loss
         self.optimizer_d.zero_grad()
@@ -177,6 +179,8 @@ class Trainer(BaseTrainer):
 
         d_loss.backward()
         # TODO: clip_grad_norm
+        self._clip_grad_norm(self.model.mpd)
+        self._clip_grad_norm(self.model.msd)
         self.optimizer_d.step()
 
         # ---- Generator loss
@@ -192,7 +196,6 @@ class Trainer(BaseTrainer):
         mpd_g_loss = self.criterion.generator_adv_loss(mpd_outputs)
         msd_g_loss = self.criterion.generator_adv_loss(msd_outputs)
 
-        mel_spec_pred = self.model.mel_spec_transform(wav_pred).squeeze(1)
         mel_spec_g_loss = self.criterion.mel_spectrogram_loss(mel_spec_gt, mel_spec_pred)
         
         mpd_features_g_loss = self.criterion.feature_matching_loss(mpd_gt_features, mpd_features)
@@ -202,6 +205,7 @@ class Trainer(BaseTrainer):
 
         g_loss.backward()
         # TODO: clip_grad_norm
+        self._clip_grad_norm(self.model.generator)
         self.optimizer_g.step()
         
         batch["mpd_d_loss"] = mpd_d_loss
