@@ -53,6 +53,7 @@ def find_device():
 
     return device
 
+
 def prepare_device(n_gpu_use, logger):
     """
     setup GPU device if available. get gpu device indices which are used for DataParallel
@@ -72,15 +73,21 @@ def prepare_device(n_gpu_use, logger):
             "available on this machine."
         )
         n_gpu_use = n_gpu
-    device = torch.device("cuda" if n_gpu_use > 0 else "cpu")
-    list_ids = list(range(n_gpu_use))
+    if n_gpu_use == 1:
+        id = find_device()
+        device = torch.device(f"cuda:{id}")
+        list_ids = [id]
+    else:
+        device = torch.device("cuda" if n_gpu_use > 0 else "cpu")
+        list_ids = list(range(n_gpu_use))
     return device, list_ids
 
 
 class MetricTracker:
     def __init__(self, *keys, writer=None):
         self.writer = writer
-        self._data = pd.DataFrame(index=keys, columns=["total", "counts", "average"])
+        self._data = pd.DataFrame(
+            index=keys, columns=["total", "counts", "average"])
         self.reset()
 
     def reset(self):
@@ -92,7 +99,8 @@ class MetricTracker:
         #     self.writer.add_scalar(key, value)
         self._data.total[key] += value * n
         self._data.counts[key] += n
-        self._data.average[key] = self._data.total[key] / self._data.counts[key]
+        self._data.average[key] = self._data.total[key] / \
+            self._data.counts[key]
 
     def avg(self, key):
         return self._data.average[key]

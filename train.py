@@ -31,17 +31,17 @@ def main(config):
 
     # setup data_loader instances
     dataloaders = get_dataloaders(config)
-    
+
     model = config.init_obj(config["arch"], module_arch)
     logger.info(model)
 
     # prepare for (multi-device) GPU training
     device, device_ids = prepare_device(config["n_gpu"], logger)
-    logger.info(f"Device {device}")
+    logger.info(f"Device {device} Ids {device_ids}")
     model = model.to(device)
     if len(device_ids) > 1:
         model = torch.nn.DataParallel(model, device_ids=device_ids)
-    
+
     # get function handles of loss and metrics
     loss_module = config.init_obj(config["loss"], module_loss).to(device)
     metrics = [
@@ -54,12 +54,18 @@ def main(config):
     logger.info(f'Dataset size {len(dataloaders["train"].dataset)}')
     # build optimizer, learning rate scheduler. delete every line containing lr_scheduler for
     # disabling scheduler
-    trainable_params_d = filter(lambda p: p.requires_grad, itertools.chain(model.mpd.parameters(), model.msd.parameters()))
-    optimizer_d = config.init_obj(config["optimizer_d"], torch.optim, trainable_params_d)
-    trainable_params_g = filter(lambda p: p.requires_grad, model.generator.parameters())
-    optimizer_g = config.init_obj(config["optimizer_g"], torch.optim, trainable_params_g)
-    lr_scheduler_d = config.init_obj(config["lr_scheduler_d"], hw_nv.utils.lr_scheduler, optimizer_d)
-    lr_scheduler_g = config.init_obj(config["lr_scheduler_g"], hw_nv.utils.lr_scheduler, optimizer_g)
+    trainable_params_d = filter(lambda p: p.requires_grad, itertools.chain(
+        model.mpd.parameters(), model.msd.parameters()))
+    optimizer_d = config.init_obj(
+        config["optimizer_d"], torch.optim, trainable_params_d)
+    trainable_params_g = filter(
+        lambda p: p.requires_grad, model.generator.parameters())
+    optimizer_g = config.init_obj(
+        config["optimizer_g"], torch.optim, trainable_params_g)
+    lr_scheduler_d = config.init_obj(
+        config["lr_scheduler_d"], hw_nv.utils.lr_scheduler, optimizer_d)
+    lr_scheduler_g = config.init_obj(
+        config["lr_scheduler_g"], hw_nv.utils.lr_scheduler, optimizer_g)
 
     trainer = Trainer(
         model,
@@ -111,7 +117,8 @@ if __name__ == "__main__":
     # custom cli options to modify configuration from default values given in json file.
     CustomArgs = collections.namedtuple("CustomArgs", "flags type target")
     options = [
-        CustomArgs(["--lr", "--learning_rate"], type=float, target="optimizer;args;lr"),
+        CustomArgs(["--lr", "--learning_rate"],
+                   type=float, target="optimizer;args;lr"),
         CustomArgs(
             ["--n_gpu"], type=int, target="n_gpu"
         ),
