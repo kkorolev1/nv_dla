@@ -38,7 +38,8 @@
         {
           "type": "LJSpeechDataset",
           "args": {
-            "data_path": "data/LJSpeech-1.1/wavs"
+            "data_path": "data/LJSpeech-1.1/wavs",
+            "wav_max_len": 22272
           }
         }
       ]
