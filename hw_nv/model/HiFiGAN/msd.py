@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from typing import List
+import math
 
 from hw_nv.base.base_model import BaseModel
 
@@ -20,7 +21,9 @@ class MSDSub(nn.Module):
             self.pooling = nn.Identity()
             norm_module = nn.utils.spectral_norm
         else:
-            self.pooling = nn.AvgPool1d(kernel_size=4, stride=self.factor)
+            self.pooling = nn.Sequential(
+                *[nn.AvgPool1d(kernel_size=4, stride=2, padding=2) for _ in range(int(math.log2(factor)))]
+            )
             norm_module = nn.utils.weight_norm
 
         # Adding first input channel

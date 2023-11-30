@@ -66,7 +66,7 @@ class MPDSub(nn.Module):
     def forward(self, x):
         features_from_layers = []
         if x.shape[-1] % self.period > 0:
-            x = F.pad(x, (0, self.period - x.shape[-1] % self.period))
+            x = F.pad(x, (0, self.period - x.shape[-1] % self.period), mode="reflect")
         x = x.reshape(x.shape[0], 1, x.shape[-1] // self.period, self.period)
         for layer in self.layers:
             x = layer(x)
