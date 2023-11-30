@@ -6,7 +6,7 @@ from typing import List
 from hw_nv.base.base_model import BaseModel
 
 
-class MSDSub(BaseModel):
+class MSDSub(nn.Module):
     def __init__(self,
                  factor: int,
                  kernel_sizes: List[int],
@@ -68,7 +68,7 @@ class MSDSub(BaseModel):
         return x, features_from_layers[:-1]
 
 
-class MSD(nn.Module):
+class MSD(BaseModel):
     def __init__(self,
                  factors: List[int],
                  kernel_sizes: List[int],

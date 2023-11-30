@@ -5,7 +5,7 @@ from typing import List
 
 from hw_nv.base.base_model import BaseModel
 
-class MPDSub(BaseModel):
+class MPDSub(nn.Module):
     def __init__(self,
                  period: int,
                  kernel_size: int,
@@ -74,7 +74,7 @@ class MPDSub(BaseModel):
         return x.flatten(-2, -1), features_from_layers[:-1]
 
 
-class MPD(nn.Module):
+class MPD(BaseModel):
     def __init__(self,
                  periods: List[int],
                  kernel_size: int,

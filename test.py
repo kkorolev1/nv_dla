@@ -11,14 +11,13 @@ import hw_nv.model as module_model
 from hw_nv.trainer import Trainer
 from hw_nv.utils import ROOT_PATH
 from hw_nv.utils.parse_config import ConfigParser
-from hw_nv.text import text_to_sequence
+from hw_nv.model.mel_spectrogram import MelSpectrogram, MelSpectrogramConfig
 
-from waveglow import get_wav, get_waveglow
 
 DEFAULT_CHECKPOINT_PATH = ROOT_PATH / "default_test_model" / "checkpoint.pth"
 
 
-def main(config, test_txt, waveglow_path, output_dir):
+def main(config, test_dir, output_dir):
     logger = config.get_logger("test")
 
     # define cpu or gpu if possible
@@ -39,32 +38,22 @@ def main(config, test_txt, waveglow_path, output_dir):
     logger.info(f"Device {device}")
     model = model.to(device)
     model.eval()
+    model.generator.remove_normalization()
 
-    waveglow = get_waveglow(waveglow_path, device=device)
+    os.makedirs(output_dir, exist_ok=True)
+    test_dir = Path(test_dir)
+    output_dir = Path(output_dir)
 
-    os.makedirs(os.path.join(output_dir, "texts"), exist_ok=True)
-    os.makedirs(os.path.join(output_dir, "audio"), exist_ok=True)
-
-    with open(test_txt, "r") as f:
-        texts = [text.strip() for text in f.readlines()]
-    text_cleaners = ["english_cleaners"]
-    tokenized_texts = [text_to_sequence(t, text_cleaners) for t in texts]
     sampling_rate = 22050
+    mel_spec_config = MelSpectrogramConfig()
+    mel_spec_transform = MelSpectrogram(mel_spec_config).to(device)
 
-    for i, (text, tokenized_text) in enumerate(zip(texts, tokenized_texts)):
-        with open(os.path.join(output_dir, "texts", f"{i+1}.txt"), "w") as f:
-            f.write(text)
-        for params in config["parameters_list"]:
-            src_seq = torch.tensor(tokenized_text, device=device).unsqueeze(0)
-            src_pos = torch.tensor(
-                [i + 1 for i in range(len(tokenized_text))], device=device).unsqueeze(0)
-            outputs = model(src_seq=src_seq, src_pos=src_pos,
-                            alpha=params[0], beta=params[1], gamma=params[2])
-            wav = get_wav(outputs["mel_output"].transpose(
-                1, 2), waveglow, sampling_rate=sampling_rate).unsqueeze(0)
-
-            torchaudio.save(os.path.join(output_dir, "audio",
-                            f"{i+1}_speed={params[0]}_pitch={params[1]}_energy={params[2]}.wav"), wav, sample_rate=sampling_rate)
+    with torch.no_grad():
+        for wav_path in tqdm(test_dir.iterdir(), "Processing wavs"):
+            wav = torchaudio.load(wav_path)[0].to(device)
+            mel_spec = mel_spec_transform(wav)
+            wav_pred = model.generator(mel_spec).squeeze(0).cpu()
+            torchaudio.save(output_dir / wav_path.name, wav_pred, sample_rate=sampling_rate)
 
 
 if __name__ == "__main__":
@@ -92,10 +81,10 @@ if __name__ == "__main__":
     )
     args.add_argument(
         "-t",
-        "--test-txt",
-        default="test.txt",
+        "--test-dir",
+        default="test_audio",
         type=str,
-        help="Path to test file with 3 sentences",
+        help="Directory with test audio wav files",
     )
     args.add_argument(
         "-o",
@@ -103,13 +92,6 @@ if __name__ == "__main__":
         default="output",
         type=str,
         help="Output directory",
-    )
-    args.add_argument(
-        "-w",
-        "--waveglow-path",
-        default="waveglow/pretrained_model/waveglow_256channels.pt",
-        type=str,
-        help="Path to Waveglow weights",
     )
     args.add_argument(
         "-j",
@@ -137,4 +119,4 @@ if __name__ == "__main__":
         with Path(args.config).open() as f:
             config.config.update(json.load(f))
 
-    main(config, args.test_txt, args.waveglow_path, args.output_dir)
+    main(config, args.test_dir, args.output_dir)

@@ -6,7 +6,7 @@ from hw_nv.base.base_model import BaseModel
 from hw_nv.model.HiFiGAN.mrf import MRF
 
 
-class GeneratorBlock(BaseModel):
+class GeneratorBlock(nn.Module):
     def __init__(self,
                  in_channels: int,
                  conv_trans_kernel_size: int,
@@ -35,7 +35,7 @@ class GeneratorBlock(BaseModel):
         return self.sequential(x)
 
 
-class Generator(nn.Module):
+class Generator(BaseModel):
     def __init__(self,
                  in_channels: int,
                  hid_dim: int,
@@ -86,3 +86,8 @@ class Generator(nn.Module):
         # so new_time = time + 256
         # Then we need to cut last samples
         return x[..., :-256]
+    
+    def remove_normalization(self):
+        for module in self.modules():
+            if isinstance(module, nn.Conv1d) or isinstance(module, nn.Conv2d) or isinstance(module, nn.ConvTranspose1d):
+                nn.utils.remove_weight_norm(module)
