@@ -2,6 +2,8 @@ from abc import abstractmethod
 
 import torch
 from numpy import inf
+import os
+from glob import glob
 
 from hw_nv.base import BaseModel
 from hw_nv.logger import get_visualizer
@@ -161,6 +163,8 @@ class BaseTrainer:
         }
         filename = str(self.checkpoint_dir / "checkpoint-epoch{}.pth".format(epoch))
         if not (only_best and save_best):
+            for ckpt_path in glob(str(self.checkpoint_dir / "checkpoint-epoch*.pth")):
+                os.remove(ckpt_path)
             torch.save(state, filename)
             self.logger.info("Saving checkpoint: {} ...".format(filename))
         if save_best:
