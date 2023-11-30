@@ -80,12 +80,7 @@ class Generator(BaseModel):
         for block in self.blocks:
             x = block(x)
         x = self.tail(x)
-        # Because of center=True in mel spectrogram
-        # num_frames = time / 256 + 1
-        # Generator upsamples x256
-        # so new_time = time + 256
-        # Then we need to cut last samples
-        return x[..., :-256]
+        return x
     
     def remove_normalization(self):
         for module in self.modules():

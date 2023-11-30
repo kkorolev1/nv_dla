@@ -70,8 +70,8 @@ def pad_2D_tensor(inputs, maxlen=None):
 
 def collate(batch):
     output = {}
-    output["wav"] = pad_1D_tensor([item["wav"].squeeze(0) for item in batch]).unsqueeze(1)
-    # Cut wavs so the length will be divisible by 256
-    new_length = (output["wav"].shape[-1] // 256) * 256
-    output["wav"] =  output["wav"][..., :new_length]
+    output["wav_gt"] = pad_1D_tensor([item["wav_gt"] for item in batch])
+    new_length = (output["wav_gt"].shape[-1] // 256) * 256
+    output["wav_gt"] = output["wav_gt"][..., :new_length] 
+    output["mel_gt"] = pad_2D_tensor([item["mel_gt"] for item in batch])
     return output

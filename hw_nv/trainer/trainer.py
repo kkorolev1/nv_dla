@@ -78,18 +78,18 @@ class Trainer(BaseTrainer):
             "loss", *[m.name for m in self.metrics], writer=self.writer
         )
 
-        mel_spec_config = MelSpectrogramConfig()
-        self.mel_spec_transform = MelSpectrogram(mel_spec_config).to(self.device)
-
         if config.resume is not None:
             self._resume_checkpoint(config.resume)
+
+        mel_spec_config = MelSpectrogramConfig()
+        self.mel_spec_transform = MelSpectrogram(mel_spec_config).to(self.device)
 
     @staticmethod
     def move_batch_to_device(batch, device: torch.device):
         """
         Move all necessary tensors to the HPU
         """
-        for tensor_for_gpu in ["wav"]:
+        for tensor_for_gpu in ["wav_gt", "mel_gt"]:
             batch[tensor_for_gpu] = batch[tensor_for_gpu].to(device)
         return batch
 
@@ -162,10 +162,8 @@ class Trainer(BaseTrainer):
     def process_batch(self, batch, batch_idx, metrics: MetricTracker):
         batch = self.move_batch_to_device(batch, self.device)
 
-        # wav_gt: Bx1xL
-        wav_gt = batch["wav"]
-        with torch.no_grad():
-            mel_spec_gt = self.mel_spec_transform(wav_gt).squeeze(1)
+        wav_gt = batch["wav_gt"]
+        mel_spec_gt = batch["mel_gt"]
 
         wav_pred = self.model.generator(mel_spec_gt)
         batch["wav_pred"] = wav_pred
