@@ -132,6 +132,9 @@ if __name__ == "__main__":
             ["--reset_optimizer"], type=bool, target="trainer;reset_optimizer"
         ),
         CustomArgs(
+            ["--reset_scheduler"], type=bool, target="trainer;reset_scheduler"
+        ),
+        CustomArgs(
             ["--epochs"], type=int, target="trainer;epochs"
         ),
         CustomArgs(

@@ -44,6 +44,7 @@ class BaseTrainer:
         self.save_period = cfg_trainer["save_period"]
         self.monitor = cfg_trainer.get("monitor", "off")
         self.reset_optimizer = cfg_trainer.get("reset_optimizer", False)
+        self.reset_scheduler = cfg_trainer.get("reset_scheduler", False)
 
         # configuration to monitor model performance and save best
         if self.monitor == "off":
@@ -187,8 +188,12 @@ class BaseTrainer:
         self.model.load_state_dict(checkpoint["state_dict"])
 
         if not self.reset_optimizer:
+            self.logger.info("Loading optimizer state")
             self.optimizer_d.load_state_dict(checkpoint["optimizer_d"])
             self.optimizer_g.load_state_dict(checkpoint["optimizer_g"])
+
+        if not self.reset_scheduler:
+            self.logger.info("Loading scheduler state")
             self.lr_scheduler_d.load_state_dict(checkpoint["lr_scheduler_d"])
             self.lr_scheduler_g.load_state_dict(checkpoint["lr_scheduler_g"])
 
