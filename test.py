@@ -17,11 +17,11 @@ from hw_nv.model.mel_spectrogram import MelSpectrogram, MelSpectrogramConfig
 DEFAULT_CHECKPOINT_PATH = ROOT_PATH / "default_test_model" / "checkpoint.pth"
 
 
-def main(config, test_dir, output_dir):
+def main(config, test_dir, output_dir, device):
     logger = config.get_logger("test")
 
     # define cpu or gpu if possible
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = torch.device(device)
 
     # build model architecture
     model = config.init_obj(config["arch"], module_model)
@@ -103,10 +103,6 @@ if __name__ == "__main__":
 
     args = args.parse_args()
 
-    # set GPUs
-    if args.device is not None:
-        os.environ["CUDA_VISIBLE_DEVICES"] = args.device
-
     # first, we need to obtain config with model parameters
     # we assume it is located with checkpoint in the same folder
     # model_config = Path(args.resume).parent / "config_server.json"
@@ -119,4 +115,4 @@ if __name__ == "__main__":
         with Path(args.config).open() as f:
             config.config.update(json.load(f))
 
-    main(config, args.test_dir, args.output_dir)
+    main(config, args.test_dir, args.output_dir, args.device)
