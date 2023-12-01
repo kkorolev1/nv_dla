@@ -64,13 +64,13 @@
   "lr_scheduler_d": {
     "type": "ExponentialLR",
     "args": {
-      "gamma": 0.999
+      "gamma": 0.95
     }
   },
   "lr_scheduler_g": {
     "type": "ExponentialLR",
     "args": {
-      "gamma": 0.999
+      "gamma": 0.95
     }
   },
   "loss": {
