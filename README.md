@@ -3,12 +3,12 @@
 Implementation of a HiFiGAN
 
 
-[WanDB Report](https://wandb.ai/kkorolev/tts_project/reports/HW3-TTS--Vmlldzo2MDQ1MTg5)
+[WanDB Report](https://wandb.ai/kkorolev/nv_project/reports/Neural-Vocoder-HW4--Vmlldzo2MTUxMTE0)
 
 See the results at the end of this README.
 
 ## Checkpoints
-- [Model checkpoint 70 epochs](https://disk.yandex.ru/d/qQx-LW21qd17Xg)
+- [Model checkpoint 70 epochs](https://disk.yandex.ru/d/XQg7xYpBUfrl2g)
 
 ## Installation guide
 
@@ -44,3 +44,16 @@ Generation of these 3 sentences. Filename corresponds to the order of a sentence
 `Massachusetts Institute of Technology may be best known for its math, science and engineering education`
 
 `Wasserstein distance or Kantorovich Rubinstein metric is a distance function defined between probability distributions on a given metric space`
+
+
+https://github.com/kkorolev1/nv_dla/assets/72045472/e16cdd34-a78c-4546-bebd-af1d2b547dd5
+
+
+
+https://github.com/kkorolev1/nv_dla/assets/72045472/a029865e-f41e-4c7c-8516-6be49df0b4d5
+
+
+
+https://github.com/kkorolev1/nv_dla/assets/72045472/ec143fdd-55a3-424e-9152-96bab910b289
+
+
